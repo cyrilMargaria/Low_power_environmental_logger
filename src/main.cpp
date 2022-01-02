@@ -22,10 +22,12 @@ int secs = 0;
 #include <Wire.h>
 #include <SparkFun_MS5803_I2C.h> // Click here to get the library: http://librarymanager/All#SparkFun_MS5803-14BA
 MS5803 sensor(ADDRESS_HIGH);
-
 //Create variables to store results
 float temperature_c;
-double pressure_abs, depth, pressure_baseline;
+double pressure_abs;
+#ifdef DEPTH_SENSOR
+double pressure_baseline, depth;
+#endif
 //------------------------------------------------------
 
 
@@ -123,8 +125,10 @@ void cavedataLog(void) {
         CavedataLog.print(now.second(), DEC);
 
         CavedataLog.print(", ");
+    #ifdef DEPTH_SENSOR    
         CavedataLog.print(depth);
         CavedataLog.print(", ");
+    #endif    
         CavedataLog.print(temperature_c);
 
         // read the input on analog pin 0:
@@ -162,21 +166,23 @@ void detect_distance(void) {
 
     // Read pressure from the sensor in mbar.
     pressure_abs = sensor.getPressure(ADC_4096);
-
+#ifdef DEPTH_SENSOR
     // Taking our baseline pressure at the beginning we can find an approximate
     // change in altitude based on the differences in pressure.
     depth =  -(pressure_baseline - pressure_abs);
-
+#endif
     // Report values via UART
     DEBUG_PRINT("Temperature C = ");
     DEBUG_PRINTLN(temperature_c);
 
     DEBUG_PRINT("Pressure abs (mbar)= ");
     DEBUG_PRINTLN(pressure_abs);
-
+#ifdef DEPTH_SENSOR
     DEBUG_PRINT("Depth (cm) = ");
     DEBUG_PRINTLN(depth);
+#endif    
     DEBUG_PRINTLN("done.");
+
 
     DEBUG_PRINTLN(" ");//padding between outputs
 }
@@ -276,9 +282,11 @@ void display_oled(void) {
     //------------------------------
     //display code
     //oled.set2X();
+#ifdef DEPTH_SENSOR
     oled.print(depth);
     oled.print(" cm");
     oled.print(" ");
+#endif
     oled.print(temperature_c);
     oled.print((char)247);
     oled.print("C");
@@ -365,9 +373,10 @@ void setup() {
     //Retrieve calibration constants for conversion math.
     sensor.reset();
     sensor.begin();
+#ifdef DEPTH_SENSOR
     pressure_baseline = sensor.getPressure(ADC_4096);
     //------------------------------------------------------------------------
-
+#endif
     //------------------------------
     //RTC
     //uncomment the line below and upload again after inital upload or it will reset the clock every time you reset the arduino
